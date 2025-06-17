@@ -44,8 +44,8 @@ class Enemy(pygame.sprite.Sprite):
         dy = player_pos[1] + 25 - self.rect.centery
         dist = math.hypot(dx, dy)
         if dist != 0:
-            self.rect.x += int(dx / dist * 1.5)
-            self.rect.y += int(dy / dist * 1.5)
+            self.rect.x += dx / dist * 1.1
+            self.rect.y += dy / dist * 1.1
 
 # 玩家設定
 player_pos = [275, 300]
@@ -125,6 +125,9 @@ while running:
     enemy_group.update(player_pos)
     arrow_group.draw(screen)
     enemy_group.draw(screen)
+
+    # 檢測2組碰撞
+    pygame.sprite.groupcollide(enemy_group, arrow_group, True, True)
 
     # 更新畫面
     pygame.display.update()
