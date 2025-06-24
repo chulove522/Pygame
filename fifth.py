@@ -47,6 +47,28 @@ class Enemy(pygame.sprite.Sprite):
             self.rect.x += dx / dist * 1.1
             self.rect.y += dy / dist * 1.1
 
+class OrbitBall(pygame.sprite.Sprite):
+    def __init__(self, player_pos, radius, angle_offset, life=300):
+        super().__init__()
+        self.image = pygame.image.load("assets/orbit.png").convert_alpha()
+        self.image= pygame.transform.scale(self.image, (30,30))
+        self.rect = self.image.get_rect()
+        self.radius = radius
+        self.angle = angle_offset
+        self.player_pos = player_pos
+        self.life = life  # 約5秒鐘存在
+
+    def update(self):
+        self.life -= 1
+        if self.life <= 0:
+            self.kill()
+            return
+        self.angle += 0.05
+        cx = self.player_pos[0] + player_size // 2
+        cy = self.player_pos[1] + player_size // 2
+        self.rect.centerx = int(cx + math.cos(self.angle) * self.radius)
+        self.rect.centery = int(cy + math.sin(self.angle) * self.radius)
+
 # 玩家設定
 player_pos = [275, 300]
 player_size = 50
@@ -54,16 +76,20 @@ player_size = 50
 # Sprite 群組
 arrow_group = pygame.sprite.Group()
 enemy_group = pygame.sprite.Group()
+orbit_group = pygame.sprite.Group()
 
 SPAWN_ENEMY = pygame.USEREVENT + 1
 pygame.time.set_timer(SPAWN_ENEMY, 400)
 SPAWN_ARROW = pygame.USEREVENT + 2
 pygame.time.set_timer(SPAWN_ARROW, 300)
+SPAWN_ORBIT = pygame.USEREVENT + 3
+pygame.time.set_timer(SPAWN_ORBIT, 2000)
 
 # 玩家圖片
 player_img = pygame.image.load("assets/player.png").convert_alpha()
 player_img = pygame.transform.scale(player_img, (player_size, player_size))  # 可根據需要縮放
 
+angle_offset = 0
 
 running = True
 while running:
@@ -94,6 +120,10 @@ while running:
             arrow_group.add(Arrow(cx, cy, 10, 0))   # 右
             arrow_group.add(Arrow(cx, cy, 0, 10))   # 下
             arrow_group.add(Arrow(cx, cy, -10, 0))  # 左
+        if event.type == SPAWN_ORBIT:
+            if len(orbit_group) < 3:
+                orbit_group.add(OrbitBall(player_pos, 50, angle_offset))
+                angle_offset += math.pi * 1 / 3
 
 
     # 控制角色移動
@@ -113,9 +143,12 @@ while running:
     enemy_group.update(player_pos)
     arrow_group.draw(screen)
     enemy_group.draw(screen)
+    orbit_group.update()
+    orbit_group.draw(screen)
 
     # 檢測2組碰撞
     pygame.sprite.groupcollide(enemy_group, arrow_group, True, True)
+    pygame.sprite.groupcollide(enemy_group, orbit_group, True, False)
 
     # 更新畫面
     pygame.display.update()
